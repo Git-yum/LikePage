@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="../bootstrap.min.css">
+    <title>LikePage</title>
+
+    <script src="../jquery-3.4.0.min.js"></script>
+    <script src="../bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(function () {
+        <!-- 初始化表格 -->
+        function initTable(jsonArray){
+            var headstr = '<thead><tr><th>编号</th><th>奖级设置</th><th>中奖条件</th><th>单注奖金</th></tr></thead>';
+            var bodystr = '';
+            $.each(jsonArray,function (index,item) {
+                <!-- 方便以后扩展 -->
+                // $.each(item,function (key,value) {
+                //    console.dir(key+":"+value);
+                // });
+                bodystr += '<tr><th>'+item.businessId+'</th><td>'+item.levelSet+'</td><td>'+item.conditionSet+'</td><td>'+item.singleBonus+'</td></tr>';
+            });
+            $("#tbl").html(headstr+'<tbody>'+bodystr+'</tbody>');
+        }
+
+        <!-- 初始化分页按钮组 -->
+        function initPage(thisPage,pageRows) {
+
+            <!-- 默认当前页大于等于1 -->
+            if(thisPage == undefined || thisPage < 1){
+                thisPage = 1;
+            }
+            <!-- 默认每页记录10,最小为1 -->
+            if(pageRows == undefined || pageRows < 1){
+                pageRows = 10;
+            }
+
+            <!-- 发送AJAX请求后台分页数据 -->
+            $.getJSON(
+                "http://127.0.0.1:8084/brules/queryBRulesByPagination",
+                {"page":thisPage,"rows":pageRows},
+                function (json) {
+                    <!-- 总页码数或最后一页 -->
+                    var pageNums = Math.ceil(json.total/pageRows);
+                    <!-- 上一页与下一页的可用与不可用状态4种组合状态 -->
+                    if(pageNums <= 1){
+                        $("#page li:nth-child(2)").val(1).children("a").text(1);
+                        $("#page li:first-child").addClass("disabled").val(1);
+                        $("#page li:last-child").addClass("disabled").val(1);
+                    }else if (thisPage == 1){
+                        $("#page li:nth-child(2)").val(1).children("a").text(1);
+                        $("#page li:first-child").addClass("disabled").val(1);
+                        $("#page li:last-child").removeClass("disabled").val(2);
+                    }else if (thisPage >= pageNums){
+                        $("#page li:nth-child(2)").val(pageNums).children("a").text(pageNums);
+                        $("#page li:first-child").removeClass("disabled").val(pageNums-1);
+                        $("#page li:last-child").addClass("disabled").val(pageNums);
+                    }else {
+                        $("#page li:nth-child(2)").val(thisPage).children("a").text(thisPage);
+                        $("#page li:first-child").removeClass("disabled").val(thisPage-1);
+                        $("#page li:last-child").removeClass("disabled").val(thisPage+1);
+                    }
+                    <!-- 获取json分页数据,填充表格 -->
+                    initTable(json.rows);
+                }
+            );
+        };
+
+        <!-- 定义当前页与每页记录:默认1和10 -->
+        var page,rows;
+        initPage(page,rows);
+
+        <!-- 分页按钮被点击 -->
+        $("#page li").click(function () {
+            page = $(this).val();
+            initPage(page,rows);
+        });
+        <!-- 分页数量被点击 -->
+        $("#nums a").click(function () {
+            rows = parseInt($(this).text());
+            $("#nums").parent().find("button:first-child").text("每页"+rows+"条");
+            initPage(page,rows);
+        });
+    });
+    </script>
+
+</head>
+<body>
+<div class="container-fluid">
+    <table id="tbl" class="table thead-dark table-striped"></table>
+    <div class="row">
+        <div class="col-5 col-sm-3">
+            <div class="btn-group dropup">
+                <button type="button" class="btn btn-light">
+                    每页10条
+                </button>
+                <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <div id="nums" class="dropdown-menu">
+                    <a class="dropdown-item" href="#">10</a>
+                    <a class="dropdown-item" href="#">25</a>
+                    <a class="dropdown-item" href="#">50</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-7 col-sm-9">
+            <ul id="page" class="pagination justify-content-end">
+                <li class="page-item">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">下一页</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>
